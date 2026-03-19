@@ -71,7 +71,8 @@ tasks.named('jmhClasses') {
 var indy = (project.findProperty('indy') ?: 'true').toBoolean()
 
 tasks.named('compileJmhGroovy') {
-    classpath += compileJmhJava.classpath
+    // classpath is now a ConfigurableFileCollection; += (plus) is no longer supported. Use .from() instead.
+    classpath.from(compileJmhJava.classpath)
     groovyOptions.optimizationOptions.indy = indy
     inputs.property('indy', indy)
 }

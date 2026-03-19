@@ -113,13 +113,13 @@ class PerformanceTestsExtension {
             je.group = "Performance tests"
             je.mainClass.set('org.apache.groovy.perf.CompilerPerformanceTest')
             je.classpath(groovyConf, sourceSets.getByName('test').output)
-            je.jvmArgs = ['-Xms512m', '-Xmx512m']
+            je.jvmArgs.set(['-Xms512m', '-Xmx512m'])
             je.outputs.file(outputFile)
             je.doFirst {
                 def args = [outputFile.get().toString(), "-cp", groovyConf.asPath]
                 args.addAll(testFiles.collect { it.toString() })
-                je.setArgs(args)
-                println je.args.asList()
+                je.args.set(args)
+                println je.args.get()
             }
         }
         tasks.named("performanceTests", PerformanceTestSummary) { pts ->

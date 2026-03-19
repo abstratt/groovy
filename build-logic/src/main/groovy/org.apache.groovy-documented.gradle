@@ -44,15 +44,18 @@ dependencies {
 
 tasks.withType(Javadoc).configureEach {
     maxMemory = sharedConfiguration.getJavadocMaxMemory().get()
+    // classpath is now a ConfigurableFileCollection; the += operator (plus) is no longer supported.
+    // Use .from() to append entries instead. Moved out of options{} where delegate resolution
+    // was ambiguous, to make the reference to the task's classpath explicit.
+    classpath.from(project.file('src/main/java')) // to pick up package.html
     options {
         addBooleanOption('html5', true)
         addStringOption('Xdoclint:none', '-quiet')
-        addStringOption('tag', 'apiNote:a:"API Note:"')
-        addStringOption('tag', 'implSpec:a:"Implementation Requirements:"')
-        addStringOption('tag', 'implNote:a:"Implementation Note:"')
+        // addStringOption('tag', ...) no longer accepts String values for the 'tag' option in the
+        // Provider API; use the typed tags() method instead, which accepts the full tag spec format.
+        tags 'apiNote:a:"API Note:"', 'implSpec:a:"Implementation Requirements:"', 'implNote:a:"Implementation Note:"'
         windowTitle = "Groovy ${versions.groovy}"
         docTitle = "Groovy ${versions.groovy}"
-        classpath += project.file('src/main/java') // to pick up package.html
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
@@ -70,7 +73,9 @@ tasks.withType(Javadoc).configureEach {
 
 tasks.withType(Groovydoc).configureEach {
     if (sourceSets.findByName('main')) {
-        source = sourceSets.main.groovy.srcDirs + sourceSets.main.java.srcDirs
+        // source is a FilteredFileTree (read-only view); use the task's setSource() method
+        // rather than assigning via = or calling setFrom() on the property directly.
+        setSource(sourceSets.main.groovy.srcDirs + sourceSets.main.java.srcDirs)
     }
     groovyClasspath = configurations.groovydocClasspath
     use = true
