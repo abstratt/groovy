@@ -136,9 +136,14 @@ def bootstrapJar = tasks.register('bootstrapJar', Jar) {
 // The main Groovy compile tasks has a special setup because
 // it uses the "bootstrap compiler"
 tasks.withType(GroovyCompile).configureEach {
-    groovyClasspath = files(bootstrapJar, groovyClasspath)
+    // groovyClasspath is now a ConfigurableFileCollection; self-referencing via
+    // files(bootstrapJar, groovyClasspath) is no longer supported. Use from() to add bootstrapJar.
+    // The convention-inferred entries (Groovy compiler, ASM, etc.) remain in the collection;
+    // bootstrapJar appends after them, which is safe since it only provides a Java-compiled subset
+    // of the same Groovy compiler classes — the inferred full Groovy jar takes precedence.
+    groovyClasspath.from(bootstrapJar)
     if (it.name == 'compileGroovy') {
-        classpath = files(bootstrapJar, classpath)
+        classpath.from(bootstrapJar)
     }
     options.incremental = true
 }
@@ -194,7 +199,9 @@ tasks.withType(Test).configureEach {
 def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
     maxHeapSize = '1g'
     outputs.cacheIf { true }
-    outputDirectory = layout.buildDirectory.dir("generated/sources/antlr4").get().asFile
+    // outputDirectory is now a DirectoryProperty; pass the Provider<Directory> directly
+    // instead of eagerly realizing it with .get().asFile.
+    outputDirectory = layout.buildDirectory.dir("generated/sources/antlr4")
 
     final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'
     packageName = PARSER_PACKAGE_NAME
@@ -202,7 +209,8 @@ def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
 
     doLast {
         def parserFilePattern = 'Groovy*'
-        def outputPath = generateGrammarSource.outputDirectory.canonicalPath
+        // outputDirectory is now a DirectoryProperty; use .get().asFile to obtain the File at execution time.
+        def outputPath = generateGrammarSource.outputDirectory.get().asFile.canonicalPath
         def parserPackagePath = "${outputPath}/${PARSER_PACKAGE_NAME.replace('.', '/')}"
         file(parserPackagePath).mkdirs()
         copy {

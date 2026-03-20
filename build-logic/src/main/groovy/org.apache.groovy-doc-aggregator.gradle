@@ -73,7 +73,9 @@ def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
 def javadocAll = tasks.register("javadocAll", Javadoc) {
     destinationDir = layout.buildDirectory.dir("alljavadoc").get().asFile
     source configurations.allSources
-    classpath = configurations.allSourcesRuntimeClasspath + configurations.allSources
+    // classpath is now a ConfigurableFileCollection; direct assignment of a + expression is no longer
+    // supported. Use setFrom() to replace the collection's contents with the given sources.
+    classpath.setFrom(configurations.allSourcesRuntimeClasspath, configurations.allSources)
     docAggregation.excludedFromJavadocs.each {
         exclude it
     }
